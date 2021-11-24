@@ -23,6 +23,10 @@ class Bank extends EventEmitter {
 
     this.on("withdraw", (personId, amount) => this._withdraw(personId, amount));
 
+    this.on("send", (personFirstId, personSecondId, amount) =>
+      this._send(personFirstId, personSecondId, amount)
+    );
+
     this.on("error", (error) => {
       console.error(`We have a problem: ${error.message}`);
       process.exit(1);
@@ -76,14 +80,14 @@ class Bank extends EventEmitter {
   }
 
   _getCustomerById(personId) {
-    const index = this.customers.findIndex(({ id }) => id === personId);
-    const customer = this.customers[index];
+    const idx = this.customers.findIndex(({ id }) => id === personId);
+    const customer = this.customers[idx];
 
     if (!customer) {
       this.emit("error", new Error(`customer with id ${personId} not found`));
     }
 
-    return { customer, index };
+    return { customer, idx };
   }
 
   addMoney(personId, amount) {
@@ -91,14 +95,14 @@ class Bank extends EventEmitter {
       this.emit("error", new Error("amount should be grater than 0"));
     }
 
-    const { customer, index } = this._getCustomerById(personId);
+    const { customer, idx } = this._getCustomerById(personId);
     const balance = customer.balance + amount;
 
-    this._updateBalance({ customer, index, balance });
+    this._updateBalance({ customer, idx, balance });
   }
 
-  _updateBalance({ customer, index, balance }) {
-    this.customers[index] = { ...customer, balance };
+  _updateBalance({ customer, idx, balance }) {
+    this.customers[idx] = { ...customer, balance };
   }
 
   _withdraw(personId, amount) {
@@ -106,7 +110,7 @@ class Bank extends EventEmitter {
       this.emit("error", new Error("amount should be grater than 0"));
     }
 
-    const { customer, index } = this._getCustomerById(personId);
+    const { customer, idx } = this._getCustomerById(personId);
 
     if (customer.balance - amount < 0) {
       this.emit(
@@ -117,22 +121,55 @@ class Bank extends EventEmitter {
 
     const balance = customer.balance - amount;
 
-    this._updateBalance({ customer, index, balance });
+    this._updateBalance({ customer, idx, balance });
+  }
+
+  _send(senderId, receiverId, amount) {
+    if (amount <= 0) {
+      this.emit("error", new Error("amount should be grater than 0"));
+    }
+
+    const { customer: sender, idx: senderIdx } =
+      this._getCustomerById(senderId);
+
+    const { customer: receiver, idx: receiverIdx } =
+      this._getCustomerById(receiverId);
+
+    if (sender.balance - amount < 0) {
+      this.emit(
+        "error",
+        new Error("customer does not have enough money for that transaction")
+      );
+    }
+
+    this._updateBalance({
+      customer: sender,
+      idx: senderIdx,
+      balance: sender.balance - amount,
+    });
+
+    this._updateBalance({
+      customer: receiver,
+      idx: receiverIdx,
+      balance: receiver.balance + amount,
+    });
   }
 }
 
 const bank = new Bank();
 
-const personId = bank.register({
+const personFirstId = bank.register({
   name: "Pitter Black",
   balance: 100,
 });
 
-bank.emit("add", personId, 20);
-bank.emit("get", personId, (balance) => {
-  console.log(`I have ${balance}₴`); // I have 120₴
+const personSecondId = bank.register({
+  name: "Oliver White",
+  balance: 700,
 });
-bank.emit("withdraw", personId, 50);
-bank.emit("get", personId, (balance) => {
-  console.log(`I have ${balance}₴`); // I have 70₴
+
+bank.emit("send", personFirstId, personSecondId, 50);
+
+bank.emit("get", personSecondId, (balance) => {
+  console.log(`I have ${balance}₴`); // I have 750₴
 });
