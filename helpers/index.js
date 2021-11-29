@@ -109,7 +109,7 @@ const validateFields = ({ data, name, instance }) => {
   }
 };
 
-class Crypter {
+class Cipher {
   constructor({
     password = "very!Strong_pa$$wordNotverYSecure",
     algorithm = "aes-256-cbc",
@@ -156,4 +156,4 @@ class Crypter {
   }
 }
 
-module.exports = { validate, validateFields, Crypter, certificates };
+module.exports = { validate, validateFields, Cipher, certificates };

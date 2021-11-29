@@ -1,7 +1,6 @@
 const Ui = require("./ui");
 const Guardian = require("./guardian");
 const AccountManager = require("./accountManager");
-const Logger = require("./logger");
 
 const customers = [
   {
@@ -30,27 +29,21 @@ const managerOptions = {
   objectMode: true,
 };
 
-const loggerOptions = {
-  readableObjectMode: true,
-  writableObjectMode: true,
-  decodeStrings: false,
+const credentials = {
+  password: "very!Strong_pa$$wordNotverYSecur",
+  algorithm: "aes-256-cbc",
+  signAlgorithm: "RSA-SHA256",
 };
 
 const ui = new Ui(customers, uiOptions);
-const guardian = new Guardian(guardianOptions);
-const manager = new AccountManager(managerOptions);
-const logger = new Logger(loggerOptions);
+const guardian = new Guardian(credentials, guardianOptions);
+const manager = new AccountManager(credentials, managerOptions);
 
 ui.on("error", ({ message }) => {
   console.log(message);
   process.exit(1);
 })
   .pipe(guardian)
-  .on("error", ({ message }) => {
-    console.log(message);
-    process.exit(1);
-  })
-  .pipe(logger)
   .on("error", ({ message }) => {
     console.log(message);
     process.exit(1);
