@@ -5,9 +5,15 @@ const path = require("path");
 const { promisify } = require("util");
 
 // Instruments
-const { validateFilterObj, filterData } = require("./helpers");
+const {
+  validateFilterObj,
+  filterData,
+  Json2csv,
+  handleData,
+} = require("./helpers");
 
 const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
 
 const server = net.createServer();
 const PORT = process.env.PORT || 8080;
@@ -17,19 +23,16 @@ server.on("connection", (socket) => {
 
   socket.on("data", async (msg) => {
     try {
-      const filter = JSON.parse(msg);
+      const { filter, meta } = JSON.parse(msg);
       validateFilterObj(filter);
-
-      console.log(filter);
 
       const file = await readFile(path.join("data", "users.json"), {
         encoding: "utf-8",
       });
       const source = JSON.parse(file);
-
       const data = filterData({ data: source, filter });
 
-      socket.write(JSON.stringify(data));
+      await handleData({ data, meta, socket });
     } catch ({ message }) {
       socket.write(Buffer.from(`Error: ${message}`));
     }

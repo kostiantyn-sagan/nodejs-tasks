@@ -1,3 +1,6 @@
+const Json2csv = require("./Json2csv");
+const handleData = require("./handleData");
+
 const validateFilterObj = (filter) => {
   const fields = [
     "name",
@@ -10,6 +13,9 @@ const validateFilterObj = (filter) => {
     "country",
     "street",
     "email",
+    "meta",
+    "format",
+    "archive",
   ];
 
   if (filter.address && typeof filter.address !== "object") {
@@ -44,8 +50,10 @@ const validateFilterObj = (filter) => {
         throw new Error(`${key} is not allowed field for filter object`);
       }
 
-      if (typeof filter[key] !== "string") {
+      if (key !== "archive" && typeof filter[key] !== "string") {
         throw new Error(`${key} field should be a string`);
+      } else if (key === "archive" && typeof filter[key] !== "boolean") {
+        throw new Error(`${key} field should be a boolean`);
       }
     } else if (filter.hasOwnProperty(key) && typeof filter[key] === "object") {
       validateFilterObj(filter[key]);
@@ -55,7 +63,7 @@ const validateFilterObj = (filter) => {
 
 const _filterUser = ({ user, filter }) => {
   let validations = [];
-  const { name, addres, phone, email } = filter;
+  const { name, address, phone, email } = filter;
   const {
     name: userName,
     address: userAddress,
@@ -116,4 +124,4 @@ const filterData = ({ data, filter }) => {
   return filteredData;
 };
 
-module.exports = { validateFilterObj, filterData };
+module.exports = { validateFilterObj, filterData, Json2csv, handleData };
